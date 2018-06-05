@@ -2,13 +2,19 @@ import Foundation
 import UIKit
 import CoreML
 
+// switch here between original TinyYOLO and CAPEv2 model
+let capeV2: Bool = true
+
 class YOLO {
-  public static let inputWidth = 416
-  public static let inputHeight = 416
+
+  let useCapeV2 = capeV2
+    
+  public static let inputWidth = capeV2 ? 224 : 416
+  public static let inputHeight = capeV2 ? 224 : 416
   public static let maxBoundingBoxes = 10
 
   // Tweak these values to get more or fewer predictions.
-  let confidenceThreshold: Float = 0.3
+  let confidenceThreshold: Float = capeV2 ? 0.015 : 0.3
   let iouThreshold: Float = 0.5
 
   struct Prediction {
@@ -17,28 +23,41 @@ class YOLO {
     let rect: CGRect
   }
 
-  let model = TinyYOLO()
+  let capeV2Model = CAPEv2()
+  let tinyYoloModel = TinyYOLO()
+
+  
 
   public init() { }
 
   public func predict(image: CVPixelBuffer) throws -> [Prediction] {
-    if let output = try? model.prediction(image: image) {
-      return computeBoundingBoxes(features: output.grid)
+    
+    // not a nice solution, but generated CAPEv2 and TiniYOLO classes have no common protocol
+    if capeV2 {
+      if let output = try? capeV2Model.prediction(image: image) {
+        return computeBoundingBoxes(features: output.grid)
+      } else {
+        return []
+      }
     } else {
-      return []
+      if let output = try? tinyYoloModel.prediction(image: image) {
+        return computeBoundingBoxes(features: output.grid)
+      } else {
+        return []
+      }
     }
   }
 
   public func computeBoundingBoxes(features: MLMultiArray) -> [Prediction] {
-    assert(features.count == 125*13*13)
+    //assert(features.count == 125*13*13)
 
     var predictions = [Prediction]()
 
-    let blockSize: Float = 32
-    let gridHeight = 13
-    let gridWidth = 13
+    let blockSize: Float = capeV2 ? 16 : 32
+    let gridHeight = capeV2 ? 14 : 13
+    let gridWidth = capeV2 ? 14 : 13
     let boxesPerCell = 5
-    let numClasses = 20
+    let numClasses = capeV2 ? 2 :20
 
     // The 416x416 image is divided into a 13x13 grid. Each of these grid cells
     // will predict 5 bounding boxes (boxesPerCell). A bounding box consists of
@@ -97,8 +116,9 @@ class YOLO {
           // The size of the bounding box, tw and th, is predicted relative to
           // the size of an "anchor" box. Here we also transform the width and
           // height into the original 416x416 image space.
-          let w = exp(tw) * anchors[2*b    ] * blockSize
-          let h = exp(th) * anchors[2*b + 1] * blockSize
+          let anch = capeV2 ? capeAnchors : anchors
+          let w = exp(tw) * anch[2*b    ] * blockSize
+          let h = exp(th) * anch[2*b + 1] * blockSize
 
           // The confidence value for the bounding box is given by tc. We use
           // the logistic sigmoid to turn this into a percentage.

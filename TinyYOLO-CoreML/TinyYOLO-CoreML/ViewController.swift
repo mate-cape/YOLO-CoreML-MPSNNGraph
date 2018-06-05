@@ -72,7 +72,7 @@ class ViewController: UIViewController {
   }
 
   func setUpVision() {
-    guard let visionModel = try? VNCoreMLModel(for: yolo.model.model) else {
+    guard let visionModel = yolo.useCapeV2 ? (try? VNCoreMLModel(for: yolo.capeV2Model.model)) : (try? VNCoreMLModel(for: yolo.tinyYoloModel.model)) else {
       print("Error: could not create Vision model")
       return
     }
@@ -230,7 +230,8 @@ class ViewController: UIViewController {
         rect.size.height *= scaleY
 
         // Show the bounding box.
-        let label = String(format: "%@ %.1f", labels[prediction.classIndex], prediction.score * 100)
+        let labl = yolo.useCapeV2 ? capeLabels2 : labels
+        let label = String(format: "%@ %.1f", labl[prediction.classIndex], prediction.score * 100)
         let color = colors[prediction.classIndex]
         boundingBoxes[i].show(frame: rect, label: label, color: color)
       } else {

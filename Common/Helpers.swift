@@ -10,7 +10,21 @@ let labels = [
   "pottedplant", "sheep", "sofa", "train", "tvmonitor"
 ]
 
+let capeLabels2 = [
+    "person", "vehicle"
+]
+
+let capeLabels14 = [
+    "person", "bicycle", "car", "motorcycle", "police car", "bus", "police officer", "truck",
+    "pickup", "van", "trailer", "police truck", "fire truck", "firefighter"
+]
+
+
+
+
+
 let anchors: [Float] = [1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52]
+let capeAnchors: [Float] = [1.14546, 1.35477, 3.74892, 4.12506, 6.67686, 10.94868, 15.76564, 7.05556, 19.54104, 18.33656]
 
 /**
   Removes bounding boxes that overlap too much with other boxes that have
